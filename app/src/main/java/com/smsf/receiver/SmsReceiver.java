@@ -4,7 +4,9 @@ import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 import android.util.Log;
@@ -14,7 +16,9 @@ import com.smsf.email.MailSenderInfo;
 import com.smsf.email.SimpleMailSender;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 /**
@@ -26,26 +30,56 @@ public class SmsReceiver extends BroadcastReceiver {
     public static final String SMS_RECEIVED_ACTION = "android.provider.Telephony.SMS_RECEIVED";
     public static final String SMS_DELIVER_ACTION = "android.provider.Telephony.SMS_DELIVER";
 
+    // 持久化存储
+    public SharedPreferences sp;
+    public final String appName = "smsf";
+    public final String emailKey = "email";
+    public final String sendEmailPasswd = "send_email_pass_word";
+    public final String sendEmailUserName = "send_email_username";
+
     @SuppressLint("LongLogTag")
     @Override
     public void onReceive(Context context, Intent intent) {
         this.mContext=context;
+        // 持久化存储用户要转发的邮件地址
+        sp = context.getSharedPreferences(appName, context.MODE_PRIVATE);
         Toast.makeText(context, "接收短信执行了.....", Toast.LENGTH_LONG).show();
+
+        String email = sp.getString(emailKey, null);
+        String send_email_username = sp.getString(sendEmailUserName, null);
+        String send_email_passwd = sp.getString(sendEmailPasswd, null);
+        String[] mailKeyInfo = new String[10];
+        mailKeyInfo[0]=email;
+        mailKeyInfo[1]=send_email_username;
+        mailKeyInfo[2]=send_email_passwd;
+
+
         Log.e("SMSReceiver, isOrderedBroadcast()=", isOrderedBroadcast()+"");
         Log.e("SmsReceiver onReceive...", "接收短信执行了......");
         String action = intent.getAction();
+        List<String> keyWords = new ArrayList<String>();
+        keyWords.add("验证码");
+        keyWords.add("授权码");
+        keyWords.add("校验码");
+        keyWords.add("信用卡");
+        keyWords.add("银行");
         if (SMS_RECEIVED_ACTION.equals(action) || SMS_DELIVER_ACTION.equals(action)) {
             Toast.makeText(context, "开始接收短信.....", Toast.LENGTH_LONG).show();
             Log.e("SmsReceiver onReceive...", "开始接收短信.....");
 
             Bundle bundle = intent.getExtras();
+            String pduFormat = intent.getStringExtra("format");
             if (bundle != null) {
                 Object[] pdus = (Object[])bundle.get("pdus");
                 if (pdus != null && pdus.length > 0) {
                     SmsMessage[] messages = new SmsMessage[pdus.length];
                     for (int i = 0; i < pdus.length; i++) {
                         byte[] pdu = (byte[]) pdus[i];
-                        messages[i] = SmsMessage.createFromPdu(pdu);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            messages[i] = SmsMessage.createFromPdu(pdu, pduFormat);
+                        }else{
+                            messages[i] = SmsMessage.createFromPdu(pdu);
+                        }
                     }
                     for (SmsMessage message : messages) {
                         String content = message.getMessageBody();// 得到短信内容
@@ -54,29 +88,24 @@ public class SmsReceiver extends BroadcastReceiver {
                         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         format.setTimeZone(TimeZone.getTimeZone("GMT+08:00"));
                         String sendContent = content +" "+ format.format(date) + " 来自" + sender + "的短信";
+                        mailKeyInfo[3] = sendContent;
                         Log.e("SmsReceicer onReceive ",sendContent +" ");
 
+                        boolean needForword = false;
+                        for (String key:keyWords) {
+                            // 满足任一条件, 才转发
+                            if (sendContent.contains(key)){
+                                needForword = true;
+                                break;
+                            }
+                        }
+
                         // 异步任务做事
-                        new SendMailTask().execute(sendContent);
-//                        MailSenderInfo mailInfo = new MailSenderInfo();
-//                        mailInfo.setMailServerHost("smtp.163.com");
-//                        mailInfo.setMailServerPort("25");
-//                        mailInfo.setValidate(true);
-//                        mailInfo.setUserName("xiangxixids@163.com");
-//                        mailInfo.setPassword("woaicxz850305");//您的邮箱密码
-//                        mailInfo.setFromAddress("xiangxixids@163.com");
-//                        mailInfo.setToAddress("xiangxixids@qq.com");
-//                        mailInfo.setSubject("来自西皮科技");
-//                        // 短信内容设置为邮件内容
-//                        mailInfo.setContent(sendContent);
-//                        //这个类主要来发送邮件
-//                        SimpleMailSender sms = new SimpleMailSender();
-//                        String result = "短信转发失败";
-//                        if(sms.sendTextMail(mailInfo))//发送文体格式
-//                        {
-//                            result = "短信转发成功";
-//                        }
-//                        Toast.makeText(context, result, Toast.LENGTH_LONG).show();
+                        if (needForword){
+                            new SendMailTask().execute(mailKeyInfo);
+                        }else {
+                            Toast.makeText(context, "不满足关键词, 不转发", Toast.LENGTH_LONG).show();
+                        }
                     }
                 }
             }
@@ -102,13 +131,13 @@ public class SmsReceiver extends BroadcastReceiver {
             mailInfo.setMailServerHost("smtp.163.com");
             mailInfo.setMailServerPort("25");
             mailInfo.setValidate(true);
-            mailInfo.setUserName("xiangxixids@163.com");
+            mailInfo.setUserName(strings[1]);//您的发送邮箱用户名
             // 自己输入密码
-            mailInfo.setPassword("XXXXXXXXX");//您的邮箱密码
-            mailInfo.setFromAddress("xiangxixids@163.com");
-            mailInfo.setToAddress("xiangxixids@qq.com");
-            mailInfo.setSubject("西皮科技:"+strings[0]);
-            mailInfo.setContent("来自西皮科技: "+strings[0]);
+            mailInfo.setPassword(strings[2]);//您的发送邮箱密码
+            mailInfo.setFromAddress(strings[1]);//您的发送邮箱用户名
+            mailInfo.setToAddress(strings[0]);//接受邮箱地址
+            mailInfo.setSubject("西皮科技:"+strings[3]);//短信内容
+            mailInfo.setContent("来自西皮科技: "+strings[3]);//短信内容
             //这个类主要来发送邮件
             SimpleMailSender sms = new SimpleMailSender();
             if(sms.sendTextMail(mailInfo))//发送文体格式

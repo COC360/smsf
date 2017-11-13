@@ -52,4 +52,26 @@
         android:layout_below="@+id/send_email_btn"
         android:text="回显已存地址" />
 
+    <Button
+        android:id="@+id/save_email_username"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/echo_email_btn"
+        android:text="保存发送邮箱地址" />
+
+    <Button
+        android:id="@+id/save_email_passwd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/save_email_username"
+        android:text="保存发送邮箱密码" />
+
 </RelativeLayout>

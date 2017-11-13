@@ -22,6 +22,9 @@ public class MainActivity extends AppCompatActivity {
     public SharedPreferences sp;
     public static final String appName = "smsf";
     public static final String emailKey = "email";
+    public static final String sendEmailPasswd = "send_email_pass_word";
+    public static final String sendEmailUserName = "send_email_username";
+
 
     // 局部UI
     public EditText user_email;
@@ -45,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
 
         user_email = (EditText) findViewById(R.id.email_text);
 
-        Button sendEmail = (Button)findViewById(R.id.send_email_btn);
+        final Button sendEmail = (Button)findViewById(R.id.send_email_btn);
         sendEmail.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -77,6 +80,43 @@ public class MainActivity extends AppCompatActivity {
                     result = "已存地址为: " + email;
                 }
                 Toast.makeText(getApplicationContext(), result, Toast.LENGTH_LONG).show();
+            }
+        });
+        // 保存发送邮箱
+        final Button saveSendMailUsername = (Button) findViewById(R.id.save_email_username);
+        saveSendMailUsername.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String echo = "保存成功";
+                if (user_email.getText().toString().isEmpty() || !user_email.getText().toString().contains("@163.com")){
+                    echo = "目前只支持163邮箱作为发送邮箱";
+                }else{
+                    if (sp.edit().putString(sendEmailUserName, user_email.getText().toString()).commit()){
+                        echo = "发送邮箱地址:"+user_email.getText().toString()+echo;
+                    }else{
+                        echo = "保存失败";
+                    }
+                }
+                Toast.makeText(getApplicationContext(), echo, Toast.LENGTH_LONG).show();
+
+            }
+        });
+        // 保存发送邮箱的密码
+        final Button saveSendMailPasswd = (Button) findViewById(R.id.save_email_passwd);
+        saveSendMailPasswd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String echo = "保存成功";
+                if (user_email.getText().toString().isEmpty()){
+                    echo = "密码不能为空";
+                }else{
+                    if (sp.edit().putString(sendEmailPasswd, user_email.getText().toString()).commit()){
+                        // nothing to do
+                    }else{
+                        echo = "保存失败";
+                    }
+                }
+                Toast.makeText(getApplicationContext(), echo, Toast.LENGTH_LONG).show();
             }
         });
     }
