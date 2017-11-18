@@ -36,6 +36,7 @@ public class SmsReceiver extends BroadcastReceiver {
     public final String emailKey = "email";
     public final String sendEmailPasswd = "send_email_pass_word";
     public final String sendEmailUserName = "send_email_username";
+    public final String mailTitle = "mail_title";
 
     @SuppressLint("LongLogTag")
     @Override
@@ -48,10 +49,12 @@ public class SmsReceiver extends BroadcastReceiver {
         String email = sp.getString(emailKey, null);
         String send_email_username = sp.getString(sendEmailUserName, null);
         String send_email_passwd = sp.getString(sendEmailPasswd, null);
+        String mail_title = sp.getString(mailTitle, "尊敬的用户, 请查收您的转发信息");
         String[] mailKeyInfo = new String[10];
         mailKeyInfo[0]=email;
         mailKeyInfo[1]=send_email_username;
         mailKeyInfo[2]=send_email_passwd;
+        mailKeyInfo[4]=mail_title;
 
 
         Log.e("SMSReceiver, isOrderedBroadcast()=", isOrderedBroadcast()+"");
@@ -136,8 +139,8 @@ public class SmsReceiver extends BroadcastReceiver {
             mailInfo.setPassword(strings[2]);//您的发送邮箱密码
             mailInfo.setFromAddress(strings[1]);//您的发送邮箱用户名
             mailInfo.setToAddress(strings[0]);//接受邮箱地址
-            mailInfo.setSubject("西皮科技:"+strings[3]);//短信内容
-            mailInfo.setContent("来自西皮科技: "+strings[3]);//短信内容
+            mailInfo.setContent(strings[3]);//邮件内容 = 短信内容
+            mailInfo.setSubject(strings[4]);//邮件title, 自定义
             //这个类主要来发送邮件
             SimpleMailSender sms = new SimpleMailSender();
             if(sms.sendTextMail(mailInfo))//发送文体格式

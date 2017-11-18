@@ -74,4 +74,15 @@
         android:layout_below="@+id/save_email_username"
         android:text="保存发送邮箱密码" />
 
+    <Button
+        android:id="@+id/save_mail_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/save_email_passwd"
+        android:text="保存自定义邮件标题" />
+
 </RelativeLayout>

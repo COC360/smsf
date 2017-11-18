@@ -24,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     public static final String emailKey = "email";
     public static final String sendEmailPasswd = "send_email_pass_word";
     public static final String sendEmailUserName = "send_email_username";
+    public final String mailTitle = "mail_title";
 
 
     // 局部UI
@@ -111,6 +112,24 @@ public class MainActivity extends AppCompatActivity {
                     echo = "密码不能为空";
                 }else{
                     if (sp.edit().putString(sendEmailPasswd, user_email.getText().toString()).commit()){
+                        // nothing to do
+                    }else{
+                        echo = "保存失败";
+                    }
+                }
+                Toast.makeText(getApplicationContext(), echo, Toast.LENGTH_LONG).show();
+            }
+        });
+        // 保存自定义邮件标题
+        final Button saveMailTitle = (Button) findViewById(R.id.save_mail_title);
+        saveMailTitle.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String echo = "保存成功";
+                if (user_email.getText().toString().isEmpty()){
+                    echo = "邮件标题不能为空";
+                }else{
+                    if (sp.edit().putString(mailTitle, user_email.getText().toString()).commit()){
                         // nothing to do
                     }else{
                         echo = "保存失败";
