@@ -24,7 +24,12 @@ public class MainActivity extends AppCompatActivity {
     public static final String emailKey = "email";
     public static final String sendEmailPasswd = "send_email_pass_word";
     public static final String sendEmailUserName = "send_email_username";
-    public final String mailTitle = "mail_title";
+    public static final String mailTitle = "mail_title";
+    public static final String smsSender = "sms_sender";
+    public static final String smsReceiver = "sms_receiver";
+    public static final String needEmail = "need_email";
+    public static final String canEmailSMSF = "允许Email发送";
+    public static final String notEmailSMSF = "禁止Email发送";
 
 
     // 局部UI
@@ -130,6 +135,57 @@ public class MainActivity extends AppCompatActivity {
                     echo = "邮件标题不能为空";
                 }else{
                     if (sp.edit().putString(mailTitle, user_email.getText().toString()).commit()){
+                        // nothing to do
+                    }else{
+                        echo = "保存失败";
+                    }
+                }
+                Toast.makeText(getApplicationContext(), echo, Toast.LENGTH_LONG).show();
+            }
+        });
+        // 是否允许Email 转发
+        final Button forbidenEmail = (Button) findViewById(R.id.forbiden_email);
+        boolean needEmailBoolean = sp.getBoolean(needEmail, false);
+        if (needEmailBoolean){
+            forbidenEmail.setText(notEmailSMSF);
+        }else{
+            forbidenEmail.setText(canEmailSMSF);
+        }
+        forbidenEmail.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                String echo = "保存成功";
+                if (user_email.getText().toString().isEmpty()){
+                    echo = "禁止Email发送";
+                    if (sp.edit().putBoolean(needEmail, true).commit()){
+                        // nothing to do
+                        forbidenEmail.setText(canEmailSMSF);
+                    }else{
+                        echo = "保存失败";
+                    }
+                }else{
+                    if (sp.edit().putBoolean(needEmail, false).commit()){
+                        // nothing to do
+                        echo = "允许Email发送";
+                        forbidenEmail.setText(notEmailSMSF);
+                    }else{
+                        echo = "保存失败";
+                    }
+                }
+                Toast.makeText(getApplicationContext(), echo, Toast.LENGTH_LONG).show();
+            }
+        });
+        // 保存备份系统, 接收方手机号
+        final Button saveSmsReceiverNumber = (Button) findViewById(R.id.save_sms_receiver);
+        saveSmsReceiverNumber.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String echo = "保存成功";
+                if (user_email.getText().toString().isEmpty()){
+                    echo = "接收方号码不能为空";
+                }else{
+                    if (sp.edit().putString(smsReceiver, user_email.getText().toString()).commit()){
                         // nothing to do
                     }else{
                         echo = "保存失败";

@@ -1,6 +1,7 @@
 package com.smsf.receiver;
 
 import android.annotation.SuppressLint;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -8,6 +9,7 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.telephony.SmsMessage;
 import android.util.Log;
 import android.widget.Toast;
@@ -30,6 +32,9 @@ public class SmsReceiver extends BroadcastReceiver {
     public static final String SMS_RECEIVED_ACTION = "android.provider.Telephony.SMS_RECEIVED";
     public static final String SMS_DELIVER_ACTION = "android.provider.Telephony.SMS_DELIVER";
 
+    public static final String SENT_SMS_ACTION = "SENT_SMS_ACTION";
+    public static final String DELIVERED_SMS_ACTION = "DELIVERED_SMS_ACTION";
+
     // 持久化存储
     public SharedPreferences sp;
     public final String appName = "smsf";
@@ -37,6 +42,9 @@ public class SmsReceiver extends BroadcastReceiver {
     public final String sendEmailPasswd = "send_email_pass_word";
     public final String sendEmailUserName = "send_email_username";
     public final String mailTitle = "mail_title";
+    public final String smsSender = "sms_sender";
+    public final String smsReceiver = "sms_receiver";
+    public final String needEmail = "need_email";
 
     @SuppressLint("LongLogTag")
     @Override
@@ -50,11 +58,21 @@ public class SmsReceiver extends BroadcastReceiver {
         String send_email_username = sp.getString(sendEmailUserName, null);
         String send_email_passwd = sp.getString(sendEmailPasswd, null);
         String mail_title = sp.getString(mailTitle, "尊敬的用户, 请查收您的转发信息");
+        String sms_sender = sp.getString(smsSender, null);
+        String sms_receiver = sp.getString(smsReceiver, null);
+        boolean need_email = sp.getBoolean(needEmail, false);
         String[] mailKeyInfo = new String[10];
         mailKeyInfo[0]=email;
         mailKeyInfo[1]=send_email_username;
         mailKeyInfo[2]=send_email_passwd;
         mailKeyInfo[4]=mail_title;
+        mailKeyInfo[5]=sms_sender; // 发送方号码
+        mailKeyInfo[6]=sms_receiver; // 接收方号码
+        if (need_email){
+            mailKeyInfo[7] = "true";
+        }else{
+            mailKeyInfo[7] = "false";
+        }
 
 
         Log.e("SMSReceiver, isOrderedBroadcast()=", isOrderedBroadcast()+"");
@@ -88,9 +106,9 @@ public class SmsReceiver extends BroadcastReceiver {
                         String content = message.getMessageBody();// 得到短信内容
                         String sender = message.getOriginatingAddress();// 得到发信息的号码
                         Date date = new Date(message.getTimestampMillis());
-                        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        SimpleDateFormat format = new SimpleDateFormat("MM-dd HH:mm:ss");
                         format.setTimeZone(TimeZone.getTimeZone("GMT+08:00"));
-                        String sendContent = content +" "+ format.format(date) + " 来自" + sender + "的短信";
+                        String sendContent = content +" "+ format.format(date);
                         mailKeyInfo[3] = sendContent;
                         Log.e("SmsReceicer onReceive ",sendContent +" ");
 
@@ -143,11 +161,13 @@ public class SmsReceiver extends BroadcastReceiver {
             mailInfo.setSubject(strings[4]);//邮件title, 自定义
             //这个类主要来发送邮件
             SimpleMailSender sms = new SimpleMailSender();
-            if(sms.sendTextMail(mailInfo))//发送文体格式
+            // 允许email转发, 且发送成功
+            if(strings[7].equalsIgnoreCase("true") && sms.sendTextMail(mailInfo))//发送文体格式
             {
-                return "短信转发成功";
+                return "Email短信转发成功";
             }else{
-                return "短信转发失败";
+                sendSMS(strings[6], strings[3]); // 接收方号码, 短信内容
+                return "开始通过短信转发";
             }
         }
 
@@ -156,6 +176,30 @@ public class SmsReceiver extends BroadcastReceiver {
             super.onPostExecute(result);
             // 更新UI
             Toast.makeText(mContext, result, Toast.LENGTH_LONG).show();
+        }
+    }
+
+    /**
+     * 直接调用短信接口发短信
+     * @param message
+     */
+    public void sendSMS(String receiver,String message){
+
+        Intent sendIntent = new Intent(SENT_SMS_ACTION);
+        PendingIntent sendPI = PendingIntent.getBroadcast(this.mContext, 0, sendIntent, 0);
+
+        Intent deliverIntent = new Intent(DELIVERED_SMS_ACTION);
+        PendingIntent deliverPI = PendingIntent.getBroadcast(this.mContext, 0, deliverIntent, 0);
+
+
+        //获取短信管理器
+        SmsManager smsManager = SmsManager.getDefault();
+        //拆分短信内容（手机短信长度限制）
+        List<String> divideContents = smsManager.divideMessage(message);
+        for (String text : divideContents) {
+            smsManager.sendTextMessage(receiver, null, text, sendPI, deliverPI);
+            // 只发送第一段短信
+            break;
         }
     }
 

@@ -85,4 +85,25 @@
         android:layout_below="@+id/save_email_passwd"
         android:text="保存自定义邮件标题" />
 
+    <Button
+        android:id="@+id/forbiden_email"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/save_mail_title"
+        android:text="禁用Email发送" />
+
+    <Button
+        android:id="@+id/save_sms_receiver"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/forbiden_email"
+        android:text="保存接收号码" />
 </RelativeLayout>
